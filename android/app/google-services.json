@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "127026209811",
+    "project_id": "flutter-blog-noticias",
+    "storage_bucket": "flutter-blog-noticias.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:127026209811:android:2701b7ff21896f8d818be6",
+        "android_client_info": {
+          "package_name": "com.example.flutter_blog"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVagMvhLHZtHvgQwEr8psi8iyfWph5vQc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

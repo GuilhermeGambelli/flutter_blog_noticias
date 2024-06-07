@@ -1,0 +1,37 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "flutter-blog-noticias",
+          "appId": "1:127026209811:android:2701b7ff21896f8d818be6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "flutter-blog-noticias",
+          "configurations": {
+            "android": "1:127026209811:android:2701b7ff21896f8d818be6",
+            "ios": "1:127026209811:ios:5bbf8260b97f4201818be6",
+            "web": "1:127026209811:web:8ce77de6a887be0c818be6"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
