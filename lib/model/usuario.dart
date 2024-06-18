@@ -2,9 +2,9 @@ class Usuario {
   final String uid;
   final String email;
   final String nome;
-  final String dia;
-  final String mes;
-  final String ano;
+  final int dia;
+  final int mes;
+  final int ano;
   final String estado;
   final String cidade;
 

@@ -1,18 +1,17 @@
-//import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-//import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blog/controller/login_controller.dart';
 import 'package:flutter_blog/controller/post_controller.dart';
+import 'package:flutter_blog/controller/autor_controller.dart';
+import 'package:flutter_blog/controller/categoria_controller.dart';
 import 'package:intl/intl.dart';
-//import 'package:image_picker/image_picker.dart';
 
 import '../model/post.dart';
 import '../model/cores.dart';
 
 class PostCreateView extends StatefulWidget {
-  const PostCreateView({Key? key}) : super(key: key); // Adicione um Key
+  const PostCreateView({Key? key}) : super(key: key);
 
   @override
   State<PostCreateView> createState() => _PostCreateViewState();
@@ -20,20 +19,19 @@ class PostCreateView extends StatefulWidget {
 
 class _PostCreateViewState extends State<PostCreateView> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeAutorController = TextEditingController();
   final _tituloController = TextEditingController();
   final _descricaoController = TextEditingController();
   final _conteudoController = TextEditingController();
   final _dataCriacaoController = TextEditingController();
   final _dataEdicaoController = TextEditingController();
-  final List<String> _categorias = [
-    'Carros', 'Motos', 'Jogos', 'Tecnologia', 'Comida', 'Moda', 
-    'Eletrônicos', 'Anime', 'Filmes', 'Séries'
-  ]; // Lista de categorias
+  final _imagemUrlController = TextEditingController();
+  List<String> _categorias = [];
   List<String> _categoriasSelecionadas = [];
   bool isEditing = false;
-  final _imagemUrlController = TextEditingController();
   final agora = DateTime.now().toUtc().add(const Duration(hours: -3));
+
+  String? _selectedAuthor;
+  List<DropdownMenuItem<String>> _authorDropdownItems = [];
 
   @override
   void didChangeDependencies() {
@@ -42,12 +40,12 @@ class _PostCreateViewState extends State<PostCreateView> {
     if (postDoc != null) {
       isEditing = true;
       final postData = postDoc.data() as Map<String, dynamic>;
-      _nomeAutorController.text = postData['nomeAutor'];
+      _selectedAuthor = postData['nomeAutor'];
       _tituloController.text = postData['titulo'];
       _descricaoController.text = postData['descricao'];
       _conteudoController.text = postData['conteudo'];
       _categoriasSelecionadas = postData.containsKey('categorias') && postData['categorias'] is List
-            ? List<String>.from(postData['categorias'] as List<dynamic>) // Converte para List<String> se for uma lista
+            ? List<String>.from(postData['categorias'] as List<dynamic>)
             : [];
       _imagemUrlController.text = postData['imagemUrl'] ?? '';
       _dataCriacaoController.text = DateFormat('dd/MM/yyyy HH:mm').format((postData['dataCriacao'] as Timestamp).toDate());
@@ -55,42 +53,74 @@ class _PostCreateViewState extends State<PostCreateView> {
         ? DateFormat('dd/MM/yyyy HH:mm').format((postData['dataEdicao'] as Timestamp).toDate())
         : 'Nunca editado';
     } else {
-      // Se não recebeu um documento, é uma criação
       _dataCriacaoController.text = DateFormat('dd/MM/yyyy HH:mm').format(agora);
       _dataEdicaoController.text = DateFormat('dd/MM/yyyy HH:mm').format(agora);
     }
+
+    _loadAuthors();
+    _loadCategorias();
   }
-  
+
+  Future<void> _loadAuthors() async {
+    final authorsSnapshot = await AutorController().listarAutoresFuture();
+    setState(() {
+      _authorDropdownItems = authorsSnapshot.docs.map((doc) {
+        final authorData = doc.data() as Map<String, dynamic>;
+        return DropdownMenuItem<String>(
+          value: authorData['nome'],
+          child: Text(authorData['nome']),
+        );
+      }).toList();
+    });
+  }
+
+  Future<void> _loadCategorias() async {
+    final categoriasSnapshot = await CategoriaController().listarCategoriasFuture();
+    setState(() {
+      _categorias = categoriasSnapshot.docs.map((doc) {
+        final categoriaData = doc.data() as Map<String, dynamic>;
+        return categoriaData['nome'] as String;
+      }).toList().cast<String>();
+    });
+  }
+
   void _criarOuEditarPost() async {
-  if (_formKey.currentState!.validate()) {
-    // Obtenha o documento do post se estiver editando
-    final DocumentSnapshot? postDoc = ModalRoute.of(context)?.settings.arguments as DocumentSnapshot?;
-    // Converte strings de data para Timestamps
+    if (_formKey.currentState!.validate()) {
+      final DocumentSnapshot? postDoc = ModalRoute.of(context)?.settings.arguments as DocumentSnapshot?;
       Timestamp dataCriacao = isEditing 
           ? (postDoc!.data() as Map<String, dynamic>)['dataCriacao'] 
           : Timestamp.fromDate(DateFormat('dd/MM/yyyy HH:mm').parse(_dataCriacaoController.text));
-
       Timestamp dataEdicao = Timestamp.fromDate(
           DateFormat('dd/MM/yyyy HH:mm').parse(_dataEdicaoController.text));
-    // Crie o objeto Post com os dados do formulário
-    var t = Post(
-      uid:  LoginController().idUsuarioLogado(),
-      categoria:  _categoriasSelecionadas,
-      nomeAutor:  _nomeAutorController.text,
-      titulo:  _tituloController.text,
-      descricao:  _descricaoController.text,
-      conteudo:  _conteudoController.text,
-      imagemUrl:  _imagemUrlController.text,
-      dataCriacao: dataCriacao, // Use o Timestamp convertido
-      dataEdicao: dataEdicao,
-    );
-    if (isEditing) {
-      PostController().atualizarPost(context, postDoc!.id, t);
-    } else {
-      PostController().criarPost(context, t);
+      var t = Post(
+        uid: LoginController().idUsuarioLogado(),
+        categoria: _categoriasSelecionadas,
+        nomeAutor: _selectedAuthor!,
+        titulo: _tituloController.text,
+        descricao: _descricaoController.text,
+        conteudo: _conteudoController.text,
+        imagemUrl: _imagemUrlController.text,
+        dataCriacao: dataCriacao,
+        dataEdicao: dataEdicao,
+      );
+      if (isEditing) {
+        PostController().atualizarPost(context, postDoc!.id, t);
+      } else {
+        PostController().criarPost(context, t);
+      }
     }
   }
-}
+
+  @override
+  void dispose() {
+    _tituloController.dispose();
+    _descricaoController.dispose();
+    _conteudoController.dispose();
+    _dataCriacaoController.dispose();
+    _dataEdicaoController.dispose();
+    _imagemUrlController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,15 +129,15 @@ class _PostCreateViewState extends State<PostCreateView> {
       appBar: AppBar(
         title: Text(
           isEditing ? 'Editar Post' : 'Criar Post',
-          style: TextStyle(color: Cores.corPrincipal), // Use your Cores.corPrincipal
+          style: TextStyle(color: Cores.corPrincipal),
         ),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context, 'principal'),
-        ), // Subtle background color
+        ),
       ),
-      body: SingleChildScrollView( // Permite rolagem se o conteúdo for grande
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(30.0),
         child: Form(
           key: _formKey,
@@ -115,13 +145,29 @@ class _PostCreateViewState extends State<PostCreateView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const SizedBox(height: 10),
+              DropdownButtonFormField<String>(
+                value: _selectedAuthor,
+                decoration: InputDecoration(
+                  labelText: 'Nome do Autor',
+                  prefixIcon: Icon(Icons.person, color: Cores.corPrincipal),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                ),
+                items: _authorDropdownItems,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedAuthor = newValue!;
+                  });
+                },
+                validator: (value) => value == null ? 'Selecione um autor' : null,
+              ),
+              const SizedBox(height: 15),
               DropdownButtonFormField2<String>(
                 decoration: InputDecoration(
-                  labelText: 'Categorias', // Label condicional
+                  labelText: 'Categorias',
                   prefixIcon: Icon(Icons.category, color: Cores.corPrincipal),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
                 ),
-                value: null, // Remove o valor inicial
+                value: null,
                 onChanged: (String? newValue) {
                   setState(() {
                     if (_categoriasSelecionadas.contains(newValue)) {
@@ -154,28 +200,10 @@ class _PostCreateViewState extends State<PostCreateView> {
                           )).toList(),
                         ),
                       ),
-                      Icon(Icons.arrow_drop_down, color: Cores.corPrincipal), // Ícone de seta para baixo
+                      Icon(Icons.arrow_drop_down, color: Cores.corPrincipal),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 15),
-              TextFormField(
-                controller: _nomeAutorController,
-                decoration: InputDecoration(
-                  labelText: 'Nome do Autor',
-                  prefixIcon: Icon(Icons.person, color: Cores.corPrincipal),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10.0),
-                    borderSide: BorderSide(color: Cores.corPrincipal),
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'O nome do autor é obrigatório';
-                  }
-                  return null;
-                },
               ),
               const SizedBox(height: 15),
               TextFormField(
@@ -183,7 +211,7 @@ class _PostCreateViewState extends State<PostCreateView> {
                 maxLength: 20,
                 decoration: InputDecoration(
                   labelText: 'Título',
-                  prefixIcon: Icon(Icons.title, color: Cores.corPrincipal), // Adicionei um ícone
+                  prefixIcon: Icon(Icons.title, color: Cores.corPrincipal),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
                 ),
                 validator: (value) {
@@ -199,12 +227,12 @@ class _PostCreateViewState extends State<PostCreateView> {
                 maxLength: 60,
                 decoration: InputDecoration(
                   labelText: 'Descrição',
-                  prefixIcon: Icon(Icons.description, color: Cores.corPrincipal), // Adicionei um ícone
+                  prefixIcon: Icon(Icons.description, color: Cores.corPrincipal),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'O conteúdo é obrigatório';
+                    return 'A descrição é obrigatória';
                   }
                   return null;
                 },
@@ -213,10 +241,10 @@ class _PostCreateViewState extends State<PostCreateView> {
               TextFormField(
                 controller: _conteudoController,
                 maxLength: 500,
-                maxLines: null, // Permite que o campo cresça verticalmente
+                maxLines: null,
                 decoration: InputDecoration(
                   labelText: 'Conteúdo',
-                  prefixIcon: Icon(Icons.article, color: Cores.corPrincipal), // Adicionei um ícone
+                  prefixIcon: Icon(Icons.article, color: Cores.corPrincipal),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
                 ),
                 validator: (value) {
@@ -238,13 +266,13 @@ class _PostCreateViewState extends State<PostCreateView> {
                   if (value == null || value.isEmpty) {
                     return 'Insira a URL da imagem';
                   }
-                  return null; // URL válida
+                  return null;
                 },
               ),
               const SizedBox(height: 15),
               TextFormField(
                 controller: _dataCriacaoController,
-                enabled: false, // Torna o campo não editável
+                enabled: false,
                 decoration: InputDecoration(
                   labelText: 'Data de Criação',
                   prefixIcon: Icon(Icons.calendar_today, color: Cores.corPrincipal),
@@ -252,10 +280,9 @@ class _PostCreateViewState extends State<PostCreateView> {
                 ),
               ),
               const SizedBox(height: 15),
-              // Campo Data de Edição (somente leitura)
               TextFormField(
                 controller: _dataEdicaoController,
-                enabled: false, // Torna o campo não editável
+                enabled: false,
                 decoration: InputDecoration(
                   labelText: 'Data de Edição',
                   prefixIcon: Icon(Icons.edit_calendar, color: Cores.corPrincipal),
@@ -277,12 +304,12 @@ class _PostCreateViewState extends State<PostCreateView> {
                   ),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(140, 40), // Aumentei um pouco o tamanho do botão
+                      minimumSize: const Size(140, 40),
                       backgroundColor: Cores.corPrincipal,
                     ),
-                    onPressed: _criarOuEditarPost, // Chama a função _criarOuEditarPost
+                    onPressed: _criarOuEditarPost,
                     child: const Text(
-                      'Criar',
+                      'Salvar',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),

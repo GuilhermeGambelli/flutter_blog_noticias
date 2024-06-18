@@ -72,4 +72,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'flutter-blog-noticias.appspot.com',
     iosBundleId: 'com.example.flutterBlog',
   );
+
 }

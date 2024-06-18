@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blog/service/ibge_service.dart';
@@ -25,11 +26,22 @@ class AutoresCadastrarViewViewState extends State<AutoresCadastrarView> {
   List<Municipio> _municipios = [];
   String? _estadoSelecionado;
   String? _municipioSelecionado;
+  bool isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _carregarEstados();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final DocumentSnapshot? autorDoc = ModalRoute.of(context)?.settings.arguments as DocumentSnapshot?;
+    if (autorDoc != null) {
+      isEditing = true;
+      _preencherCamposComDadosDoAutor(autorDoc); // Chama a função para preencher os campos
+    }
   }
 
   Future<void> _carregarEstados() async {
@@ -45,6 +57,38 @@ class AutoresCadastrarViewViewState extends State<AutoresCadastrarView> {
       _municipios = municipios;
       _municipioSelecionado = null; // Limpar a cidade ao trocar o estado
     });
+  }
+
+  void _criarOuEditarAutor(bool isEditing) async { // Adiciona o parâmetro isEditing
+    if (_formKey.currentState!.validate()) {
+      final DocumentSnapshot? autorDoc = ModalRoute.of(context)?.settings.arguments as DocumentSnapshot?;
+
+      final autor = Autor(
+        nome: _nomeController.text,
+        idade: int.parse(_idadeController.text),
+        estado: _estadoSelecionado!,
+        cidade: _municipioSelecionado!,
+        fotoUrl: _fotoUrlController.text,
+      );
+
+      if (isEditing) {
+        AutorController().atualizarAutor(context, autorDoc!.id, autor);
+      } else {
+        AutorController().criarAutor(context, autor);
+      }
+
+      Navigator.pop(context); // Fecha a tela após criar/editar o autor
+    }
+  }
+// Função para preencher os campos com os dados do autor
+  void _preencherCamposComDadosDoAutor(DocumentSnapshot autorDoc) {
+    final autorData = autorDoc.data() as Map<String, dynamic>;
+    _nomeController.text = autorData['nome'];
+    _idadeController.text = autorData['idade'].toString();
+    _estadoSelecionado = autorData['estado'];
+    _municipioSelecionado = autorData['estado']; // Carrega os municípios do estado
+    _municipioSelecionado = autorData['cidade'];
+    _fotoUrlController.text = autorData['fotoUrl'];
   }
 
   @override
@@ -162,26 +206,18 @@ class AutoresCadastrarViewViewState extends State<AutoresCadastrarView> {
                 validator: (value) => value == null || value.isEmpty ? 'A URL da foto é obrigatória' : null,
               ),
               const SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(140, 40),
-                  backgroundColor: Cores.corPrincipal,
-                ),
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    final autor = Autor(
-                      nome: _nomeController.text,
-                      idade: int.parse(_idadeController.text),
-                      estado: _estadoSelecionado!,
-                      cidade: _municipioSelecionado!,
-                      fotoUrl: _fotoUrlController.text,
-                    );
-                    AutorController().criarAutor(context, autor);
-                    Navigator.pop(context); // Fecha a tela após criar o autor
-                  }
-                },
-                child: const Text('Salvar', style: TextStyle(color: Colors.white)),
-              ),
+                        ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              minimumSize: const Size(140, 40),
+              backgroundColor: Cores.corPrincipal,
+            ),
+            onPressed: () {
+              if (_formKey.currentState!.validate()) {
+                _criarOuEditarAutor(isEditing);
+              }
+            },
+            child: const Text('Salvar', style: TextStyle(color: Colors.white)),
+          ),
             ],
           ),
         ),

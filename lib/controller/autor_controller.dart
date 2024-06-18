@@ -44,7 +44,12 @@ class AutorController {
   }
 
   // Listar autores
-  listarAutores() {
+  Stream<QuerySnapshot> listarAutores() {
     return FirebaseFirestore.instance.collection('autores').snapshots();
+  }
+
+    // Listar autores como Future
+  Future<QuerySnapshot> listarAutoresFuture() {
+    return FirebaseFirestore.instance.collection('autores').get();
   }
 }

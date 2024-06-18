@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blog/model/telas.dart';
 import '../controller/login_controller.dart';
@@ -35,7 +33,7 @@ class _PrincipalViewState extends State<PrincipalView> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> _telasWidget = [
+    final List<Widget> telasWidget = [
       Telas.buildPost(), // Chame buildPost na instância de Telas
       Telas.buildAutorais(), // Chame buildPost na instância de Telas
     ];
@@ -88,6 +86,16 @@ class _PrincipalViewState extends State<PrincipalView> {
               onTap: () => Navigator.pushNamed(context, 'autores'),
             ),
             ListTile(
+              leading: Icon(Icons.category, color: Cores.corPrincipal), // Icon color
+              title: const Text('Categorias'),
+              onTap: () => Navigator.pushNamed(context, 'categorias'),
+            ),
+            ListTile(
+              leading: Icon(Icons.search, color: Cores.corPrincipal), // Icon color
+              title: const Text('Pesquisa'),
+              onTap: () => Navigator.pushNamed(context, 'pesquisa'),
+            ),
+            ListTile(
               leading: Icon(Icons.info, color: Cores.corPrincipal), // Icon color
               title: const Text('Sobre'),
               onTap: () => Navigator.pushNamed(context, 'sobre'),
@@ -105,7 +113,7 @@ class _PrincipalViewState extends State<PrincipalView> {
       ),
       body: IndexedStack( // Usa IndexedStack para alternar entre as telas
         index: _selectedIndex,
-        children: _telasWidget,
+        children: telasWidget,
       ),
   
       floatingActionButton: _selectedIndex == 1 // Verifica se está na tela "Autorais"
@@ -133,10 +141,6 @@ class _PrincipalViewState extends State<PrincipalView> {
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
             label: 'Autorais',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Pesquisa',
           ),
         ],
         selectedItemColor: Cores.corPrincipal,

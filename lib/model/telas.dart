@@ -28,7 +28,8 @@ class Telas {
     );
   }
 
-  static Widget _buildPostItem(BuildContext context, Map<String, dynamic> post, DocumentSnapshot postDoc, {bool mostrarBotoes = false}) {
+  // Widget para exibir um post (usado em buildPost e buildAutorais)
+  static Widget buildPostItem(BuildContext context, Map<String, dynamic> post, DocumentSnapshot postDoc, {bool mostrarBotoes = false}) {
     final nomeAutor = post['nomeAutor'];
     final primeiraLetra = nomeAutor.isNotEmpty ? nomeAutor[0].toUpperCase() : '';
     final imageUrl = post['imagemUrl'];
@@ -69,42 +70,42 @@ class Telas {
                 ],
               ),
               trailing: mostrarBotoes
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit, color: Cores.corPrincipal),
-                          onPressed: () {
-                            Navigator.pushNamed(context, 'posts', arguments: postDoc);
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Confirmar Exclusão'),
-                                content: const Text('Deseja realmente excluir este post?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      PostController().excluirPost(context, postDoc.id);
-                                    },
-                                    child: const Text('Excluir'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    )
-                  : null, // Não exibe os botões se mostrarBotoes for falso
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Cores.corPrincipal),
+                        onPressed: () {
+                          Navigator.pushNamed(context, 'posts', arguments: postDoc);
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Confirmar Exclusão'),
+                              content: const Text('Deseja realmente excluir este post?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancelar'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    PostController().excluirPost(context, postDoc.id);
+                                  },
+                                  child: const Text('Excluir'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  )
+                : null, // Não exibe os botões se mostrarBotoes for falso
             ),
           ],
         ),
@@ -131,7 +132,7 @@ class Telas {
           itemBuilder: (context, index) {
             final postDoc = posts[index];
             final post = postDoc.data() as Map<String, dynamic>;
-            return _buildPostItem(context, post, postDoc);
+            return buildPostItem(context, post, postDoc); // Usa a função _buildPostItem para criar cada item da lista
           },
         );
       },
@@ -157,7 +158,7 @@ class Telas {
           itemBuilder: (context, index) {
             final postDoc = posts[index];
             final post = postDoc.data() as Map<String, dynamic>;
-            return _buildPostItem(context, post, postDoc, mostrarBotoes: true); // Exibe os botões em 'autorais'
+            return buildPostItem(context, post, postDoc, mostrarBotoes: true); // Exibe os botões em 'autorais'
           },
         );
       },

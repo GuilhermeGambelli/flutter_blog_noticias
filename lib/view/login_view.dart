@@ -11,9 +11,8 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  var txtEmail =
-      TextEditingController(text: 'teste@teste.com.br'); // Preenche o e-mail
-  var txtSenha = TextEditingController(text: 'Teste@123');
+  var txtEmail = TextEditingController(); // Preenche o e-mail
+  var txtSenha = TextEditingController();
   var txtEmailEsqueceuSenha = TextEditingController();
   bool _obscureText = true;
 

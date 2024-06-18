@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, sized_box_for_whitespace
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, sized_box_for_whitespace, unused_local_variable
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
@@ -351,17 +351,25 @@ class _UsuariosCadastrarState extends State<UsuariosCadastrarView> {
                     ),
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        LoginController().criarConta(
-                          context,
-                          txtNome.text,
-                          txtEmail.text,
-                          txtSenha.text,
-                          txtDia.text,
-                          txtMes.text,
-                          txtAno.text,
-                          txtEstado.text,
-                          txtCidade.text,
-                        );
+                        // Verificar se os valores foram selecionados
+                        if (_diaSelecionado != null && _mesSelecionado != null && _anoSelecionado != null && _estadoSelecionado != null && _municipioSelecionado != null) { 
+                          LoginController().criarConta(
+                            context,
+                            txtNome.text,
+                            txtEmail.text,
+                            txtSenha.text,
+                            _diaSelecionado!, 
+                            _mesSelecionado!,
+                            _anoSelecionado!,
+                            _estadoSelecionado!, // Usar os valores dos Dropdowns
+                            _municipioSelecionado!,
+                          );
+                        } else {
+                          // Tratar o caso em que a data ou estado/cidade não foram selecionados
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Por favor, preencha todos os campos.')),
+                          );
+                        }
                       }
                     },
                     child: Text(

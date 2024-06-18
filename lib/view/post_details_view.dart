@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../controller/comentario_controller.dart';
 import '../model/cores.dart';
 
 class PostDetailsView extends StatelessWidget {
@@ -19,7 +19,7 @@ class PostDetailsView extends StatelessWidget {
       );
     }
 
-    final postData = postDoc!.data() as Map<String, dynamic>;
+    final postData = postDoc.data() as Map<String, dynamic>;
     final nomeAutor = postData['nomeAutor'];
     final primeiraLetra = nomeAutor.isNotEmpty ? nomeAutor[0].toUpperCase() : '';
     final imagemUrl = postData['imagemUrl'];
@@ -70,7 +70,7 @@ class PostDetailsView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 Text(
-                  'Criado em: ${_formataDataAmigavel(postData['dataCriacao'].toDate())}', 
+                  'Criado em: ${_formataDataAmigavel(postData['dataCriacao'].toDate())}',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
                 const SizedBox(width: 10),
@@ -79,25 +79,26 @@ class PostDetailsView extends StatelessWidget {
                     'Editado em: ${_formataDataAmigavel(postData['dataEdicao'].toDate())}',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                const SizedBox(width: 10), // Adiciona espaçamento antes do número de comentários
               ],
             ),
             const SizedBox(height: 10),
             if (imagemUrl != null && imagemUrl.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 20),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  imagemUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Center(
-                    child: Text('Erro ao carregar a imagem'),
-                  ), // Exibe uma mensagem de erro
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    imagemUrl,
+                    height: 200,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: Text('Erro ao carregar a imagem'),
+                    ), // Exibe uma mensagem de erro
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 10),
             // Conteúdo
             Padding(
@@ -110,7 +111,7 @@ class PostDetailsView extends StatelessWidget {
             const SizedBox(height: 10),
             Wrap(
               spacing: 8.0,
-              children: postData.containsKey('categorias') && postData['categorias'] is List<dynamic> // Verifica se existe e é uma lista
+              children: postData.containsKey('categorias') && postData['categorias'] is List<dynamic>
                   ? (postData['categorias'] as List<dynamic>).map((categoria) {
                       if (categoria is String) {
                         return Chip(
@@ -120,10 +121,36 @@ class PostDetailsView extends StatelessWidget {
                       }
                       return const SizedBox.shrink();
                     }).toList()
-                  : [], // Se não existe ou não é uma lista, retorna uma lista vazia
+                  : [],
             ),
           ],
         ),
+      ),
+      floatingActionButton: StreamBuilder<QuerySnapshot>(
+        stream: ComentarioController().listarComentarios(postDoc.id),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return FloatingActionButton(
+              onPressed: () {},
+              backgroundColor: Cores.corPrincipal,
+              child: const Icon(Icons.comment, color: Colors.white),
+            );
+          }
+
+          int numeroComentarios = snapshot.data?.docs.length ?? 0;
+
+          return Badge(
+            label: Text(numeroComentarios.toString(), style: const TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.pushNamed(context, 'comentario', arguments: postDoc);
+              },
+              backgroundColor: Cores.corPrincipal,
+              child: const Icon(Icons.comment, color: Colors.white),
+            ),
+          );
+        },
       ),
     );
   }
